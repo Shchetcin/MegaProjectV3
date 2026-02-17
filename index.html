@@ -266,7 +266,7 @@
                             <p>Колонизация Юпитера</p>
                         </div>
                     </div>
-                    <div class="version" style="color: var(--text-dim);">v4.0</div>
+                    <div class="version" style="color: var(--text-dim);">v5.0</div>
                 </div>
                 <div style="display: flex; justify-content: center; align-items: center; min-height: 60vh; padding: 15px;">
                     <div style="display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 400px;">
@@ -585,7 +585,8 @@
     <script>
         // ================= КОНФИГУРАЦИЯ =================
         const CONFIG = {
-            SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzn63jXHS9rM6bYwzZHNfUTKzj8eEjwu3wAkgzWltx_Z1kbVsJStNjozHxH0cYxsYAc/exec', // ЗАМЕНИТЕ НА ВАШ URL
+            // !!! ЗАМЕНИТЕ НА ВАШ URL ОТ PUBLISHED APPS SCRIPT !!!
+            SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwkX-b_-rXNpN4GyZE6nBc3uPyTmYJ2jUrHraZZakE8hhbEGtVX53u0bJotJuirYUP-/exec',
             ADMIN_PASSWORD: 'org2026',
             REFRESH_INTERVAL: 30000
         };
@@ -705,13 +706,14 @@
                     fetch(`${CONFIG.SCRIPT_URL}?action=getTransactions&teamId=${currentState.team.id}`),
                     fetch(`${CONFIG.SCRIPT_URL}?action=getShopItems`),
                     fetch(`${CONFIG.SCRIPT_URL}?action=getTeamInventory&teamId=${currentState.team.id}`),
-                    fetch(`${CONFIG.SCRIPT_URL}?action=getContracts`) // нужно реализовать на сервере, или можно получать из команд
+                    fetch(`${CONFIG.SCRIPT_URL}?action=getContracts`)
                 ]);
 
                 const ratingData = await ratingRes.json();
                 const historyData = await historyRes.json();
                 const itemsData = await itemsRes.json();
                 const invData = await invRes.json();
+                const contractsData = await contractsRes.json();
 
                 if (ratingData.success) {
                     currentState.rating = ratingData.data.rating || [];
@@ -729,6 +731,7 @@
                 if (historyData.success) currentState.transactions = historyData.data.transactions || [];
                 if (itemsData.success) currentState.allItems = itemsData.data.items || [];
                 if (invData.success) currentState.purchases = invData.data.items || [];
+                if (contractsData.success) currentState.contracts = contractsData.data.contracts || [];
 
                 updateTeamUI();
             } catch (e) {
@@ -786,16 +789,20 @@
             let shopHtml = '';
             if (currentState.allItems.length) {
                 const purchasedIds = currentState.purchases.map(p => p.id);
+                // Проверяем, есть ли у команды здание со статусом "куплено"
+                const hasBoughtStatus = currentState.purchases.some(p => p.status === 'куплено');
                 currentState.allItems.forEach(item => {
                     const alreadyOwned = purchasedIds.includes(item.id);
+                    // Блокируем кнопку, если уже есть "куплено" ИЛИ уже куплено ИЛИ недостаточно средств
+                    const disabled = hasBoughtStatus || alreadyOwned || currentState.team.score < item.price;
                     shopHtml += `
                         <div class="product-card">
                             <div class="product-icon"><i class="${item.icon}"></i></div>
                             <div class="product-name">${item.name}</div>
                             <div class="product-description">${item.description}</div>
                             <div class="product-price"><i class="fas fa-bolt"></i> ${item.price}</div>
-                            <button class="btn-buy" onclick="buyItem(${item.id})" ${alreadyOwned || currentState.team.score < item.price ? 'disabled' : ''}>
-                                ${alreadyOwned ? 'Уже куплено' : 'Купить'}
+                            <button class="btn-buy" onclick="buyItem(${item.id})" ${disabled ? 'disabled' : ''}>
+                                ${alreadyOwned ? 'Уже куплено' : (hasBoughtStatus ? 'Ждите постройки' : 'Купить')}
                             </button>
                         </div>
                     `;
