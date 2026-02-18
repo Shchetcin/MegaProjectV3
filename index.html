@@ -806,30 +806,38 @@
             rateHtml += '</table>';
             document.getElementById('ratingTable').innerHTML = rateHtml;
 
-            // Магазин
+             // Магазин
             document.getElementById('shopImpulseBalance').textContent = currentState.team.score;
             let shopHtml = '';
             if (currentState.allItems.length) {
-                const purchasedIds = currentState.purchases.map(p => p.id);
-                // Проверяем, есть ли у команды здание со статусом "куплено"
-                const hasBoughtStatus = currentState.purchases.some(p => p.status === 'куплено');
                 currentState.allItems.forEach(item => {
-                    const alreadyOwned = purchasedIds.includes(item.id);
-                    // Блокируем кнопку, если уже есть "куплено" ИЛИ уже куплено ИЛИ недостаточно средств
-                    const disabled = hasBoughtStatus || alreadyOwned || currentState.team.score < item.price;
+                    // Находим покупку этого товара (если есть)
+                    const purchase = currentState.purchases.find(p => p.id === item.id);
+                    const status = purchase ? purchase.status : null;
+                    const isBought = !!purchase;
+                    const isAwaiting = status === 'куплено'; // ожидание выдачи макета
+            
+                    // Блокируем кнопку, если уже куплено (любой статус) ИЛИ недостаточно средств
+                    const disabled = isBought || currentState.team.score < item.price;
+            
+                    // Добавляем класс пульсации только для ожидающих выдачи
+                    const cardClass = isAwaiting ? 'product-card pulse-awaiting' : 'product-card';
+            
                     shopHtml += `
-                        <div class="product-card">
+                        <div class="${cardClass}">
                             <div class="product-icon"><i class="${item.icon}"></i></div>
                             <div class="product-name">${item.name}</div>
                             <div class="product-description">${item.description}</div>
                             <div class="product-price"><i class="fas fa-bolt"></i> ${item.price}</div>
                             <button class="btn-buy" onclick="buyItem(${item.id})" ${disabled ? 'disabled' : ''}>
-                                ${alreadyOwned ? 'Заявка отправлена' : (hasBoughtStatus ? 'Ждите одобрения заявки' : 'Купить')}
+                                ${isBought ? (isAwaiting ? 'Ожидает выдачи' : 'Уже куплено') : 'Купить'}
                             </button>
                         </div>
                     `;
                 });
-            } else shopHtml = '<p>Товары временно отсутствуют</p>';
+            } else {
+                shopHtml = '<p>Товары временно отсутствуют</p>';
+            }
             document.getElementById('shopItemsGrid').innerHTML = shopHtml;
 
             // Инвентарь (с кнопками для особых зданий)
@@ -1495,6 +1503,7 @@
     </script>
 </body>
 </html>
+
 
 
 
