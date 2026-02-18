@@ -52,6 +52,18 @@
             z-index: -1;
             animation: twinkle 4s infinite alternate;
         }
+            /* Анимация пульсации для статуса "куплено" */
+        @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        
+        /* Применяем пульсацию к значку статуса в карточках и списках */
+        .product-card .status-badge.куплено,
+        .inventory-item .status-badge.куплено {
+        animation: pulse 2s infinite;
+        }
 
         @keyframes twinkle { 0% { opacity: 0.7; } 100% { opacity: 1; } }
 
@@ -1473,6 +1485,7 @@
     </script>
 </body>
 </html>
+
 
 
 
