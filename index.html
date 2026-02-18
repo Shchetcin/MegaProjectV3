@@ -802,7 +802,7 @@
                             <div class="product-description">${item.description}</div>
                             <div class="product-price"><i class="fas fa-bolt"></i> ${item.price}</div>
                             <button class="btn-buy" onclick="buyItem(${item.id})" ${disabled ? 'disabled' : ''}>
-                                ${alreadyOwned ? 'Ждите постройки' : (hasBoughtStatus ? 'Ждите постройки' : 'Купить')}
+                                ${alreadyOwned ? 'Ждите одобрения заявки' : (hasBoughtStatus ? 'Ждите одобрения заявки' : 'Купить')}
                             </button>
                         </div>
                     `;
@@ -1473,4 +1473,5 @@
     </script>
 </body>
 </html>
+
 
