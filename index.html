@@ -878,7 +878,7 @@
         }
 
         // ================= ПОКУПКА =================
-        async function buyItem(itemId) {
+         async function buyItem(itemId) {
             if (!currentState.team) return;
             try {
                 const formData = new FormData();
@@ -888,14 +888,31 @@
                 const res = await fetch(CONFIG.SCRIPT_URL, { method: 'POST', body: formData });
                 const result = await res.json();
                 if (result.success) {
-                    showNotification('Здание куплено! Теперь его нужно построить.', 'success');
+                    showNotification('Здание куплено! Теперь подойдите к организатору за макетом.', 'success');
+                    
+                    // Обновляем баланс
                     currentState.team.score = result.data.newScore;
                     localStorage.setItem('team', JSON.stringify(currentState.team));
-                    loadTeamData();
+        
+                    // Добавляем купленное здание в purchases (локально)
+                    const newPurchase = {
+                        id: itemId,
+                        purchaseId: result.data.purchaseId || Date.now(), // если сервер не вернул, генерим временный
+                        status: 'куплено',
+                        name: result.data.item.name,
+                        description: currentState.allItems.find(i => i.id === itemId).description,
+                        icon: currentState.allItems.find(i => i.id === itemId).icon
+                    };
+                    currentState.purchases.push(newPurchase);
+        
+                    // Обновляем интерфейс
+                    updateTeamUI(); // перерисует баланс, магазин и инвентарь быстро
                 } else {
                     showNotification(result.data.error || 'Ошибка', 'error');
                 }
-            } catch (e) { showNotification('Ошибка сети', 'error'); }
+            } catch (e) {
+                showNotification('Ошибка сети', 'error');
+            }
         }
 
         // ================= АКТИВАЦИИ =================
@@ -1017,14 +1034,26 @@
         }
 
         // ================= ПЕРЕКЛЮЧЕНИЕ ТАБОВ УЧАСТНИКА =================
-        window.switchTeamTab = (tab) => {
+             window.switchTeamTab = (tab) => {
             document.querySelectorAll('#teamScreen .tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
+        
+            // Показываем/скрываем вкладки без перезагрузки данных
             document.getElementById('teamDashboardTab').style.display = tab === 'dashboard' ? 'block' : 'none';
             document.getElementById('teamShopTab').style.display = tab === 'shop' ? 'block' : 'none';
             document.getElementById('teamInventoryTab').style.display = tab === 'inventory' ? 'block' : 'none';
             document.getElementById('teamFinanceTab').style.display = tab === 'finance' ? 'block' : 'none';
-            if (tab !== 'dashboard') loadTeamData();
+        
+            // Загружаем данные только для выбранной вкладки (если они ещё не загружены)
+            if (tab === 'shop' && !currentState.allItems.length) {
+                loadTeamData(); // загрузит всё, но это будет единственный раз
+            } else if (tab === 'inventory' && !currentState.purchases.length) {
+                loadTeamData();
+            } else if (tab === 'finance') {
+                // Данные финансов уже есть в currentState.team
+                document.getElementById('investmentsValue').textContent = currentState.team.investments || 0;
+                document.getElementById('loanValue').textContent = currentState.team.loan || 0;
+            }
         };
 
         // ================= ЗАГРУЗКА ДАННЫХ ОРГАНИЗАТОРА =================
@@ -1556,6 +1585,7 @@
     </script>
 </body>
 </html>
+
 
 
 
