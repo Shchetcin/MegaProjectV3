@@ -1393,6 +1393,55 @@
         }
 
         async function updatePurchaseStatus(purchaseId, newStatus) {
+    if (!confirm(`Перевести здание в статус "${newStatus}"?`)) return;
+    try {
+        const formData = new FormData();
+        formData.append('action', 'updatePurchaseStatus');
+        formData.append('purchaseId', purchaseId);
+        formData.append('status', newStatus);
+        formData.append('password', currentState.adminPassword);
+
+        const res = await fetch(CONFIG.SCRIPT_URL, { method: 'POST', body: formData });
+        const result = await res.json();
+        if (result.success) {
+            showNotification('Статус обновлён', 'success');
+
+            // Локальное обновление DOM в модальном окне
+            const inventoryList = document.getElementById('inventoryList');
+            if (inventoryList) {
+                const itemElement = inventoryList.querySelector(`li[data-purchase-id="${purchaseId}"]`);
+                if (itemElement) {
+                    // Обновляем текст статуса и класс
+                    const statusSpan = itemElement.querySelector('.status-badge');
+                    if (statusSpan) {
+                        statusSpan.className = `status-badge ${newStatus}`;
+                        statusSpan.textContent = newStatus;
+                    }
+                    // Обновляем кнопку действия
+                    const actionsDiv = itemElement.querySelector('div:last-child');
+                    if (actionsDiv) {
+                        if (newStatus === 'строится') {
+                            actionsDiv.innerHTML = `<button class="btn btn-success btn-icon" onclick="updatePurchaseStatus(${purchaseId}, 'функционирует')" title="Завершить строительство"><i class="fas fa-check"></i></button>`;
+                        } else if (newStatus === 'куплено') {
+                            actionsDiv.innerHTML = `<button class="btn btn-warning btn-icon" onclick="updatePurchaseStatus(${purchaseId}, 'строится')" title="Начать строительство"><i class="fas fa-play"></i></button>`;
+                        } else if (newStatus === 'функционирует') {
+                            actionsDiv.innerHTML = ''; // для функционирует кнопок нет
+                        }
+                    }
+                }
+            }
+
+                // Опционально: фоновая синхронизация с сервером (необязательно)
+                // loadAdminData(); // можно вызвать позже или не вызывать вовсе
+            } else {
+                showNotification(result.data.error || 'Ошибка', 'error');
+            }
+        } catch (e) {
+            showNotification('Ошибка сети', 'error');
+        }
+    }
+
+        async function updatePurchaseStatus(purchaseId, newStatus) {
             if (!confirm(`Перевести здание в статус "${newStatus}"?`)) return;
             try {
                 const formData = new FormData();
@@ -1400,42 +1449,46 @@
                 formData.append('purchaseId', purchaseId);
                 formData.append('status', newStatus);
                 formData.append('password', currentState.adminPassword);
+        
                 const res = await fetch(CONFIG.SCRIPT_URL, { method: 'POST', body: formData });
                 const result = await res.json();
                 if (result.success) {
                     showNotification('Статус обновлён', 'success');
-                    // Перезагрузим инвентарь (если модалка открыта)
-                    const teamName = document.getElementById('inventoryTeamName').textContent;
-                    const team = currentState.allTeams.find(t => teamName.includes(t.name));
-                    if (team) {
-                        closeModal('inventoryModal');
-                        showTeamInventory(team.id);
+        
+                    // Локальное обновление DOM в модальном окне
+                    const inventoryList = document.getElementById('inventoryList');
+                    if (inventoryList) {
+                        const itemElement = inventoryList.querySelector(`li[data-purchase-id="${purchaseId}"]`);
+                        if (itemElement) {
+                            // Обновляем текст статуса и класс
+                            const statusSpan = itemElement.querySelector('.status-badge');
+                            if (statusSpan) {
+                                statusSpan.className = `status-badge ${newStatus}`;
+                                statusSpan.textContent = newStatus;
+                            }
+                            // Обновляем кнопку действия
+                            const actionsDiv = itemElement.querySelector('div:last-child');
+                            if (actionsDiv) {
+                                if (newStatus === 'строится') {
+                                    actionsDiv.innerHTML = `<button class="btn btn-success btn-icon" onclick="updatePurchaseStatus(${purchaseId}, 'функционирует')" title="Завершить строительство"><i class="fas fa-check"></i></button>`;
+                                } else if (newStatus === 'куплено') {
+                                    actionsDiv.innerHTML = `<button class="btn btn-warning btn-icon" onclick="updatePurchaseStatus(${purchaseId}, 'строится')" title="Начать строительство"><i class="fas fa-play"></i></button>`;
+                                } else if (newStatus === 'функционирует') {
+                                    actionsDiv.innerHTML = ''; // для функционирует кнопок нет
+                                }
+                            }
+                        }
                     }
-                    loadAdminData();
+        
+                    // Опционально: фоновая синхронизация с сервером (необязательно)
+                    // loadAdminData(); // можно вызвать позже или не вызывать вовсе
                 } else {
                     showNotification(result.data.error || 'Ошибка', 'error');
                 }
-            } catch (e) { showNotification('Ошибка сети', 'error'); }
+            } catch (e) {
+                showNotification('Ошибка сети', 'error');
+            }
         }
-
-        // События
-        async function processRoundIncome() {
-            if (!confirm('Начислить доход за раунд всем командам?')) return;
-            try {
-                const formData = new FormData();
-                formData.append('action', 'processRoundIncome');
-                formData.append('password', currentState.adminPassword);
-                const res = await fetch(CONFIG.SCRIPT_URL, { method: 'POST', body: formData });
-                const result = await res.json();
-                if (result.success) {
-                    showNotification('Доход начислен', 'success');
-                    loadAdminData();
-                } else {
-                    showNotification(result.data.error || 'Ошибка', 'error');
-                }
-            } catch (e) { showNotification('Ошибка сети', 'error'); }
-        }
-
         async function applyEvent() {
             const eventType = document.getElementById('eventSelect').value;
             if (!eventType) return showNotification('Выберите событие', 'warning');
@@ -1503,6 +1556,7 @@
     </script>
 </body>
 </html>
+
 
 
 
