@@ -1365,19 +1365,19 @@
                     let html = '<ul class="inventory-list">';
                     if (items.length) {
                         items.forEach(item => {
-                            let actions = '';
-                            if (item.status === 'строится') {
-                                actions = `<button class="btn btn-success btn-icon" onclick="updatePurchaseStatus(${item.purchaseId}, 'функционирует')" title="Завершить строительство"><i class="fas fa-check"></i></button>`;
-                            } else if (item.status === 'куплено') {
-                                actions = `<button class="btn btn-warning btn-icon" onclick="updatePurchaseStatus(${item.purchaseId}, 'строится')" title="Начать строительство"><i class="fas fa-play"></i></button>`;
-                            }
-                            html += `<li class="inventory-item">
-                                <i class="${item.icon}"></i>
-                                <div><strong>${item.name}</strong> — ${item.description}</div>
-                                <div><span class="status-badge ${item.status}">${item.status}</span></div>
-                                <div>${actions}</div>
-                            </li>`;
-                        });
+                        let actions = '';
+                        if (item.status === 'строится') {
+                            actions = `<button class="btn btn-success btn-icon" onclick="updatePurchaseStatus(${item.purchaseId}, 'функционирует')" title="Завершить строительство"><i class="fas fa-check"></i></button>`;
+                        } else if (item.status === 'куплено') {
+                            actions = `<button class="btn btn-warning btn-icon" onclick="updatePurchaseStatus(${item.purchaseId}, 'строится')" title="Начать строительство"><i class="fas fa-play"></i></button>`;
+                        }
+                        html += `<li class="inventory-item" data-purchase-id="${item.purchaseId}">
+                            <i class="${item.icon}"></i>
+                            <div><strong>${item.name}</strong> — ${item.description}</div>
+                            <div><span class="status-badge ${item.status}">${item.status}</span></div>
+                            <div>${actions}</div>
+                        </li>`;
+                    });        
                     } else {
                         html += '<li>Нет зданий</li>';
                     }
@@ -1503,6 +1503,7 @@
     </script>
 </body>
 </html>
+
 
 
 
